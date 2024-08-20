@@ -43,7 +43,7 @@ async function generateOriginalDict() {
     })
     console.info('completed', file, added)
   }
-  fs.writeFileSync('./output/e2k-ja-original.json', JSON.stringify(Array.from(result.entries())))
+  fs.writeFileSync('./output/original.json', JSON.stringify(Array.from(result.entries())))
 }
 
 async function generateThirdpartyDict() {
