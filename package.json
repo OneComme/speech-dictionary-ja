@@ -1,0 +1,23 @@
+{
+  "name": "e2k-ja-json",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.mjs",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node ./index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "onecomme",
+  "license": "GPL-2.0",
+  "devDependencies": {
+    "glob": "^11.0.0"
+  },
+  "dependencies": {
+    "@napi-rs/lzma": "^1.3.1",
+    "xz-decompress": "^0.2.2"
+  }
+}
