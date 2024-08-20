@@ -13,6 +13,9 @@ function checkWord(word) {
 function createPlainWord(word) {
   return word.trim().replace(/^[-/:-@#[-`{-~!]|[-/:-@#[-`{-~!]$/g, '')
 }
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
 
 async function generateOriginalDict() {
   const files = sync('./dict/original/*.tsv', {
@@ -28,14 +31,15 @@ async function generateOriginalDict() {
     let added = 0
     lines.forEach(line => {
       const [ja, en, , kana] = line.split('\t')
-      if (result.has(en.trim())) return
+      const lowerEn = escapeRegExp(en.trim().toLowerCase())
+      if (result.has(lowerEn)) return
       const word = kana || ja
       if (!word) {
         console.info('notfound', en)
         return
       }
       added++
-      result.set(en.trim(), word.trim())
+      result.set(lowerEn, word.trim())
     })
     console.info('completed', file, added)
   }
@@ -59,13 +63,14 @@ async function generateThirdpartyDict() {
       if (word.match(/^[a-zA-Z0-9!-/:-@[-`{-~]*$/)) {
         const plainWord = createPlainWord(word)
         if (!checkWord(plainWord)) return
-        if (result.has(plainWord.toLowerCase())) return // 同じ英語が既に登録されているもの
+        const escapedWord = escapeRegExp(plainWord).toLowerCase()
+        if (result.has(escapedWord)) return // 同じ英語が既に登録されているもの
         const ja = kana2 || kana || hira
         if (!ja) {
           return
         }
         added++
-        result.set(plainWord.toLowerCase(), ja.trim())
+        result.set(escapedWord, ja.trim())
       }
     })
     console.info('completed', file, added)
@@ -84,12 +89,13 @@ async function generateThirdpartyDict() {
       const [en, kana] = line.split(' ')
       const plainWord = createPlainWord(en)
       if (!checkWord(plainWord)) return
-      if (result.has(plainWord.toLowerCase())) return // 同じ英語が既に登録されているもの
+      const escapedWord = escapeRegExp(plainWord).toLowerCase()
+      if (result.has(escapedWord)) return // 同じ英語が既に登録されているもの
       if (!kana) {
         return
       }
       added++
-      result.set(plainWord.toLowerCase(), kana.trim())
+      result.set(escapedWord, kana.trim())
     })
     console.info('completed', file, added)
   })
