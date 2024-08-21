@@ -30,7 +30,7 @@ async function generateOriginalDict() {
     console.info('read', file, lines.length)
     let added = 0
     lines.forEach(line => {
-      const [ja, en, , kana] = line.split('\t')
+      const [en, ja, , kana] = line.split('\t')
       const lowerEn = escapeRegExp(en.trim().toLowerCase())
       if (result.has(lowerEn)) return
       const word = kana || ja
@@ -43,7 +43,7 @@ async function generateOriginalDict() {
     })
     console.info('completed', file, added)
   }
-  fs.writeFileSync('./output/original.json', JSON.stringify(Array.from(result.entries())))
+  fs.writeFileSync('./output/d/original.json', JSON.stringify(Array.from(result.entries())))
 }
 
 async function generateThirdpartyDict() {
@@ -102,12 +102,12 @@ async function generateThirdpartyDict() {
 
   const arr = Array.from(result.entries())
   console.info('all done', arr.length)
-  fs.writeFileSync('./output/e2k-ja.json', JSON.stringify(arr))
+  fs.writeFileSync('./output/d/e2k-ja.json', JSON.stringify(arr))
 }
 
 async function main() {
-  fs.rmSync('./output', { recursive: true, force: true })
-  fs.mkdirSync('./output')
+  fs.rmSync('./output/d', { recursive: true, force: true })
+  fs.mkdirSync('./output/d')
   await generateOriginalDict()
   await generateThirdpartyDict()
 }
