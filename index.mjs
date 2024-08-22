@@ -6,11 +6,12 @@ const excludesList = new Set(JSON.parse(fs.readFileSync('./excludes.json', { enc
 const enSentenes = fs.readFileSync('./dict/eng_sentences.tsv', { encoding: 'utf-8'})
 function checkWord(word) {
   if (!word) return
-  if (word.search(/^(?!.*[-.",_\s!/*;:><~^]).*$/g) === -1) return false // 英数字以外の文字を含むもの
+  if (word.search(/^(?!.*[-."',_\s!/*;:><~^]).*$/g) === -1) return false // 英数字以外の文字を含むもの
   if (word.search(/^[0-9]*$/g) !== -1) return false // 数字だけのもの
-  if (word.search(/^[0-9]+[a-zA-Z]+$/g) !== -1) return false // 単位と思われるもの
+  if (word.search(/^[0-9]+[a-zA-Z%]+$/g) !== -1) return false // 単位と思われるもの
   if (word.search(/^\$[0-9]+$/g) !== -1) return false // $金額
   if (word.length > MAX_WORD_LENGTH) return false // 必要以上に長いもの
+  if (word.length === 1) return false // １文字
   return true
 }
 function createPlainWord(word) {
@@ -105,14 +106,22 @@ async function generateThirdpartyDict() {
 
   console.info('check word by sentense data:', result.size)
   const excluded = []
+  let index = 0
   for (const [en] of result) {
-    if (excludesList.has(en) || !enSentenes.match(new RegExp(en, 'i'))) {
+    if (excludesList.has(en)) {
       result.delete(en)
       excluded.push(en)
-      if (!excludesList.has(en)) {
-        console.info('not exists in sensense: ', en)
+    } else {
+      const pattern = new RegExp(`(^|(?<=((\\s)|([^a-zA-Z']))))(${en})(?![a-zA-Z'])`, 'i')
+      const matches = enSentenes.match(pattern)
+      if (!matches) {
+        console.info('remove word', en)
+        result.delete(en)
+        excluded.push(en)
       }
     }
+    ++index
+    console.info('progress:', `${Math.floor(index / result.size * 100)}%`)
   }
   fs.writeFileSync('./excludes.json', JSON.stringify(excluded))
   console.info('Words not found in sentense data: ', excluded.length)
@@ -123,8 +132,8 @@ async function generateThirdpartyDict() {
 }
 
 async function main() {
-  fs.rmSync('./output/d', { recursive: true, force: true })
-  fs.mkdirSync('./output/d')
+  // fs.rmSync('./output/d', { recursive: true, force: true })
+  // fs.mkdirSync('./output/d')
   await generateOriginalDict()
   await generateThirdpartyDict()
 }
