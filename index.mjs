@@ -1,13 +1,16 @@
 import fs from 'fs'
 import { sync } from 'glob'
 import { decompress } from '@napi-rs/lzma/xz'
-
+const MAX_WORD_LENGTH = 8
+const excludesList = new Set(JSON.parse(fs.readFileSync('./excludes.json', { encoding: 'utf-8'})))
+const enSentenes = fs.readFileSync('./dict/eng_sentences.tsv', { encoding: 'utf-8'})
 function checkWord(word) {
   if (!word) return
   if (word.search(/^(?!.*[-.",_\s!/*;:><~^]).*$/g) === -1) return false // 英数字以外の文字を含むもの
   if (word.search(/^[0-9]*$/g) !== -1) return false // 数字だけのもの
   if (word.search(/^[0-9]+[a-zA-Z]+$/g) !== -1) return false // 単位と思われるもの
-  if (word.length > 12) return false // 必要以上に長いもの
+  if (word.search(/^\$[0-9]+$/g) !== -1) return false // $金額
+  if (word.length > MAX_WORD_LENGTH) return false // 必要以上に長いもの
   return true
 }
 function createPlainWord(word) {
@@ -99,6 +102,20 @@ async function generateThirdpartyDict() {
     })
     console.info('completed', file, added)
   })
+
+  console.info('check word by sentense data:', result.size)
+  const excluded = []
+  for (const [en] of result) {
+    if (excludesList.has(en) || !enSentenes.match(new RegExp(en, 'i'))) {
+      result.delete(en)
+      excluded.push(en)
+      if (!excludesList.has(en)) {
+        console.info('not exists in sensense: ', en)
+      }
+    }
+  }
+  fs.writeFileSync('./excludes.json', JSON.stringify(excluded))
+  console.info('Words not found in sentense data: ', excluded.length)
 
   const arr = Array.from(result.entries())
   console.info('all done', arr.length)

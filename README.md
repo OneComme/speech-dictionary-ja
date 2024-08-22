@@ -10,7 +10,8 @@
 - 英数字以外の文字列を含むもの
 - 数字だけのもの
 - 数字＋単位と思われるもの
-- 12文字より長い単語
+- 8文字より長い単語
+- Ngram Viewerの英文データに1度も出てこない単語
 
 ■ original.json
 
@@ -34,3 +35,9 @@ License GPL
 - modified hankaku kana to zenkaku kana
 - added basic japanese letters
 by M.Ohtsuka(mash)
+
+### The Google Books Ngram Viewer
+googlebooks-eng-all-5gram-20090715-0
+
+Creative Commons Attribution 3.0 Unported License
+https://storage.googleapis.com/books/ngrams/books/datasetsv3.html
