@@ -111,21 +111,31 @@ async function generateThirdpartyDict() {
   let index = 0, p = 0
   const total = result.size
   for (const [en] of result) {
+    if (currentDict.has(en)) {
+      const regexp = new RegExp(`(^|\\s)${en}(\\s|$)`, 'gi')
+      const matches = enSentenes.match(regexp)
+      if (!matches || matches.length <= 3) {
+        console.info(en, matches?.length)
+        result.delete(en)
+        excluded.push(en)
+      }
+      continue
+    }
     if (excludesList.has(en)) {
       result.delete(en)
       excluded.push(en)
     } else {
-      const regexp = new RegExp(`(^|(?<=(\\s)))(${en})(?![a-zA-Z'])`, 'gi')
+      const regexp = new RegExp(`(^|\\s)${en}(\\s|$)`, 'gi')
       const matches = enSentenes.match(regexp)
       if (!matches || matches.length < 3) {
-        // console.info('remove word', en)
+        console.info('remove word', en)
         result.delete(en)
         excluded.push(en)
       }
     }
     ++index
-    const rate = Math.floor(index / total * 100)
-    if (p !== percent) {
+    const rate = Math.floor(index / total * 1000) / 10
+    if (p !== rate) {
       console.info('progress:', `${rate}%`)
       p = rate
     }
