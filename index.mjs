@@ -4,18 +4,20 @@ import { decompress } from '@napi-rs/lzma/xz'
 const MAX_WORD_LENGTH = 8
 const excludesList = new Set(JSON.parse(fs.readFileSync('./excludes.json', { encoding: 'utf-8'})))
 const enSentenes = fs.readFileSync('./dict/eng_sentences.tsv', { encoding: 'utf-8'})
+const currentDict = new Map(JSON.parse(fs.readFileSync('./output/d/e2k-ja.json', { encoding: 'utf-8'})))
 function checkWord(word) {
   if (!word) return
-  if (word.search(/^(?!.*[-."',_\s!/*;:><~^]).*$/g) === -1) return false // 英数字以外の文字を含むもの
+  if (word.search(/^(?!.*[-."',_\s!/*;:><~^()]).*$/g) === -1) return false // 英数字以外の文字を含むもの
   if (word.search(/^[0-9]*$/g) !== -1) return false // 数字だけのもの
   if (word.search(/^[0-9]+[a-zA-Z%]+$/g) !== -1) return false // 単位と思われるもの
   if (word.search(/^\$[0-9]+$/g) !== -1) return false // $金額
+  if (word.search(/^[a-zA-Z]+[0-9]+$/g) !== -1) return false // a10のような連番
   if (word.length > MAX_WORD_LENGTH) return false // 必要以上に長いもの
   if (word.length === 1) return false // １文字
   return true
 }
 function createPlainWord(word) {
-  return word.trim().replace(/^[-/:-@#[-`{-~!]|[-/:-@#[-`{-~!]$/g, '')
+  return word.trim().replace(/^[#!]/g, '')
 }
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
@@ -106,22 +108,27 @@ async function generateThirdpartyDict() {
 
   console.info('check word by sentense data:', result.size)
   const excluded = []
-  let index = 0
+  let index = 0, p = 0
+  const total = result.size
   for (const [en] of result) {
     if (excludesList.has(en)) {
       result.delete(en)
       excluded.push(en)
     } else {
-      const pattern = new RegExp(`(^|(?<=((\\s)|([^a-zA-Z']))))(${en})(?![a-zA-Z'])`, 'i')
-      const matches = enSentenes.match(pattern)
-      if (!matches) {
-        console.info('remove word', en)
+      const regexp = new RegExp(`(^|(?<=(\\s)))(${en})(?![a-zA-Z'])`, 'gi')
+      const matches = enSentenes.match(regexp)
+      if (!matches || matches.length < 3) {
+        // console.info('remove word', en)
         result.delete(en)
         excluded.push(en)
       }
     }
     ++index
-    console.info('progress:', `${Math.floor(index / result.size * 100)}%`)
+    const rate = Math.floor(index / total * 100)
+    if (p !== percent) {
+      console.info('progress:', `${rate}%`)
+      p = rate
+    }
   }
   fs.writeFileSync('./excludes.json', JSON.stringify(excluded))
   console.info('Words not found in sentense data: ', excluded.length)
