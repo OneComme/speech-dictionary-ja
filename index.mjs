@@ -2,9 +2,10 @@ import fs from 'fs'
 import { sync } from 'glob'
 import { decompress } from '@napi-rs/lzma/xz'
 const MAX_WORD_LENGTH = 8
+const OUTPUT_PATH = './output/d/e2k-ja-all.json'
 const excludesList = new Set(JSON.parse(fs.readFileSync('./excludes.json', { encoding: 'utf-8'})))
 const enSentenes = fs.readFileSync('./dict/eng_sentences.tsv', { encoding: 'utf-8'})
-const currentDict = new Map(JSON.parse(fs.readFileSync('./output/d/e2k-ja.json', { encoding: 'utf-8'})))
+const currentDict = new Map(JSON.parse(fs.readFileSync(OUTPUT_PATH, { encoding: 'utf-8'})))
 function checkWord(word) {
   if (!word) return
   if (word.search(/^(?!.*[-."',_\s!/*;:><~^()]).*$/g) === -1) return false // 英数字以外の文字を含むもの
@@ -143,7 +144,7 @@ async function generateThirdpartyDict() {
     return countData.get(b[0]) - countData.get(a[0])
   })
   console.info('all done', arr.length)
-  fs.writeFileSync('./output/d/e2k-ja.json', JSON.stringify(arr))
+  fs.writeFileSync(OUTPUT_PATH, JSON.stringify(arr))
 }
 
 async function main() {
