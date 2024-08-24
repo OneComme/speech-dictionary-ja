@@ -110,18 +110,19 @@ async function generateThirdpartyDict() {
   const excluded = []
   let index = 0, p = 0
   const total = result.size
+  
+  const countData = new Map()
   for (const [en] of result) {
+    const rate = Math.floor(index / total * 1000) / 10
+    if (p !== rate) {
+      console.info('progress:', `${rate}%`)
+      p = rate
+    }
     if (currentDict.has(en)) {
       const regexp = new RegExp(`(^|\\s)${en}(\\s|$)`, 'gi')
       const matches = enSentenes.match(regexp)
-      if (!matches || matches.length <= 3) {
-        console.info(en, matches?.length)
-        result.delete(en)
-        excluded.push(en)
-      }
-      continue
-    }
-    if (excludesList.has(en)) {
+      countData.set(en, matches.length)
+    } else if (excludesList.has(en)) {
       result.delete(en)
       excluded.push(en)
     } else {
@@ -133,17 +134,14 @@ async function generateThirdpartyDict() {
         excluded.push(en)
       }
     }
-    ++index
-    const rate = Math.floor(index / total * 1000) / 10
-    if (p !== rate) {
-      console.info('progress:', `${rate}%`)
-      p = rate
-    }
+    index++
   }
   fs.writeFileSync('./excludes.json', JSON.stringify(excluded))
   console.info('Words not found in sentense data: ', excluded.length)
 
-  const arr = Array.from(result.entries())
+  const arr = Array.from(result.entries()).sort((a, b) => {
+    return countData.get(b[0]) - countData.get(a[0])
+  })
   console.info('all done', arr.length)
   fs.writeFileSync('./output/d/e2k-ja.json', JSON.stringify(arr))
 }
