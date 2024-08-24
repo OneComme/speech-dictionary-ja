@@ -4,6 +4,7 @@ import { decompress } from '@napi-rs/lzma/xz'
 const MAX_WORD_LENGTH = 8
 const OUTPUT_PATH = './output/d/e2k-ja-all.json'
 const excludesList = new Set(JSON.parse(fs.readFileSync('./excludes.json', { encoding: 'utf-8'})))
+const counts = new Map(JSON.parse(fs.readFileSync('./counts.json', { encoding: 'utf-8'})))
 const enSentenes = fs.readFileSync('./dict/eng_sentences.tsv', { encoding: 'utf-8'})
 const currentDict = new Map(JSON.parse(fs.readFileSync(OUTPUT_PATH, { encoding: 'utf-8'})))
 function checkWord(word) {
@@ -112,7 +113,7 @@ async function generateThirdpartyDict() {
   let index = 0, p = 0
   const total = result.size
   
-  const countData = new Map()
+  const countData = new Map(counts)
   for (const [en] of result) {
     const rate = Math.floor(index / total * 1000) / 10
     if (p !== rate) {
@@ -120,9 +121,11 @@ async function generateThirdpartyDict() {
       p = rate
     }
     if (currentDict.has(en)) {
-      const regexp = new RegExp(`(^|\\s)${en}(\\s|$)`, 'gi')
-      const matches = enSentenes.match(regexp)
-      countData.set(en, matches.length)
+      if (!countData.has(en)) {
+        const regexp = new RegExp(`(^|\\s)${en}(\\s|$)`, 'gi')
+        const matches = enSentenes.match(regexp)
+        countData.set(en, matches.length)
+      }
     } else if (excludesList.has(en)) {
       result.delete(en)
       excluded.push(en)
@@ -139,6 +142,8 @@ async function generateThirdpartyDict() {
   }
   fs.writeFileSync('./excludes.json', JSON.stringify(excluded))
   console.info('Words not found in sentense data: ', excluded.length)
+
+  fs.writeFileSync('./counts.json', JSON.stringify(Array.from(countData)))
 
   const arr = Array.from(result.entries()).sort((a, b) => {
     return countData.get(b[0]) - countData.get(a[0])

@@ -8,7 +8,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node ./index.mjs",
+    "build": "node ./index.mjs && npm run split",
+    "split": "node ./split.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "onecomme",
