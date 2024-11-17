@@ -56,33 +56,6 @@ async function generateOriginalDict() {
 
 async function generateThirdpartyDict() {
   const result = new Map()
-  const files = sync('./dict/mecab-ipadic-neologd/seed/**/*.csv.xz', {
-    nodir: true,
-  }).reverse()
-  for (const file of files) {
-    const compressedData = fs.readFileSync(file)
-    const decompressed = await decompress(compressedData)
-    const data = decompressed.toString('utf8')
-    const lines = data.split('\n')
-    console.info('read', file, lines.length)
-    let added = 0
-    lines.forEach(line => {
-      const [word, , , , , , , , , , hira, kana, kana2] = line.split(',')
-      if (word.match(/^[a-zA-Z0-9!-/:-@[-`{-~]*$/)) {
-        const plainWord = createPlainWord(word)
-        if (!checkWord(plainWord)) return
-        const escapedWord = escapeRegExp(plainWord).toLowerCase()
-        if (result.has(escapedWord)) return // 同じ英語が既に登録されているもの
-        const ja = kana2 || kana || hira
-        if (!ja) {
-          return
-        }
-        added++
-        result.set(escapedWord, ja.trim())
-      }
-    })
-    console.info('completed', file, added)
-  }
   const bep = sync('./dict/bep/*.dic', {
     nodir: true,
   }).reverse()
@@ -107,7 +80,34 @@ async function generateThirdpartyDict() {
     })
     console.info('completed', file, added)
   })
+  const files = sync('./dict/mecab-ipadic-neologd/seed/**/*.csv.xz', {
+    nodir: true,
+  }).reverse()
 
+  for (const file of files) {
+    const compressedData = fs.readFileSync(file)
+    const decompressed = await decompress(compressedData)
+    const data = decompressed.toString('utf8')
+    const lines = data.split('\n')
+    console.info('read', file, lines.length)
+    let added = 0
+    lines.forEach(line => {
+      const [word, , , , , , , , , , hira, kana, kana2] = line.split(',')
+      if (word.match(/^[a-zA-Z0-9!-/:-@[-`{-~]*$/)) {
+        const plainWord = createPlainWord(word)
+        if (!checkWord(plainWord)) return
+        const escapedWord = escapeRegExp(plainWord).toLowerCase()
+        if (result.has(escapedWord)) return // 同じ英語が既に登録されているもの
+        const ja = kana2 || kana || hira
+        if (!ja) {
+          return
+        }
+        added++
+        result.set(escapedWord, ja.trim())
+      }
+    })
+    console.info('completed', file, added)
+  }
   console.info('check word by sentense data:', result.size)
   const excluded = []
   let index = 0, p = 0
